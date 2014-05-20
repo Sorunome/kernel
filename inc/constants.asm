@@ -98,7 +98,7 @@
     PORT_CPUSPEED       .equ 0x20
         define_mask(CPUSPEED_6MHZ, 0)
         define_mask(CPUSPEED_15MHZ, 1)
-        ; there are also 2 and 3, but they should not be used
+        ; there are also 2 and 3, but they should not be used (3 used for OVERCLOCKED)
     
     ; 83+ SE/84+ only
     PORT_FLASHRAMSIZE       .equ 0x21

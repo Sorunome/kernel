@@ -11,6 +11,9 @@
 unlockFlash:
     push af
     push bc
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),1
+    #endif
         getBankA
         push af
             setBankA(privledgedPage)
@@ -19,6 +22,9 @@ unlockFlash:
             call 0x4001
         pop af
         setBankA
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),3
+    #endif
     pop bc
     pop af
     ret
@@ -28,6 +34,9 @@ unlockFlash:
 lockFlash:
     push af
     push bc
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),1
+    #endif
         getBankA
         push af
             setBankA(privledgedPage)
@@ -36,6 +45,9 @@ lockFlash:
             call 0x4004
         pop af
         setBankA
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),3
+    #endif
     pop bc
     pop af
     ret
@@ -48,6 +60,9 @@ lockFlash:
 ;; Notes:
 ;;  Flash must be unlocked. This can only *reset* bits of Flash.
 writeFlashByte:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     push bc
     ld b, a
     push af
@@ -79,11 +94,17 @@ writeFlashByte:
     ei
 _:  pop af
     pop bc
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 
 ; Flash operations must be done from RAM
 .ram:
     and (hl) ; Ensure that no bits are set
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     ld b, a
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
@@ -103,6 +124,9 @@ _:  ld a, b
     ; Error, abort
 .done:
     ld (hl), 0xF0
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .ram_end:
 
@@ -120,6 +144,9 @@ writeFlashBuffer:
 #ifdef COLOR
     ; TODO: Fix this crap
     ret
+#endif
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
 #endif
     push af
     ld a, i
@@ -148,10 +175,16 @@ writeFlashBuffer:
     jp po, _
     ei
 _:  pop af
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
     
 .ram:
 .loop:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     ld a, 0xAA
     ld (0x0AAA), a    ; Unlock
     ld a, 0x55
@@ -181,6 +214,9 @@ _:  inc hl
     jr nz, .loop
     cp b
     jr nz, .loop
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .ram_end:
 
@@ -201,6 +237,9 @@ eraseSwapSector:
 ;; Notes:
 ;;  Flash must be unlocked.
 eraseFlashSector:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     push bc
     ld b, a
     push af
@@ -233,9 +272,15 @@ eraseFlashSector:
     ei
 _:  pop af
     pop bc
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
     
 .ram:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     setBankA
     ld a, 0xAA
     ld (0x0AAA), a ; Unlock
@@ -258,6 +303,9 @@ _:  ld a, (0x4000)
     ; Error, abort
     ld a, 0xF0
     ld (0x4000), a
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .ram_end:
 
@@ -272,6 +320,9 @@ _:  ld a, (0x4000)
 eraseFlashPage:
     push af
     push bc
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),1
+    #endif
         push af
             call copySectorToSwap
         pop af
@@ -299,6 +350,9 @@ _:
         jr -_
 .return:
         pop af
+    #ifdef OVERCLOCKED
+        out (PORT_CPUSPEED),3
+    #endif
     pop bc
     pop af
     ret
@@ -310,6 +364,9 @@ _:
 ;; Notes:
 ;;  Flash must be unlocked.
 copySectorToSwap:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     push af
     call eraseSwapSector
     pop af
@@ -366,10 +423,16 @@ copySectorToSwap:
     ei
 _:  pop af
     pop bc
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
     
 #ifdef CPU15
 .ram:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     setBankB
     setBankA(swapSector)
     
@@ -398,6 +461,9 @@ _:  xor (hl)
     ld a, 0xF0
     ld (0), a
     setBankB(0x81)
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 _:
     inc hl
@@ -421,11 +487,17 @@ _:
     
     ld a, 0x81
     setBankB
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .end:
 
 #else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
 .ram:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     ld e, a
     
     ld a, swapSector
@@ -473,6 +545,9 @@ _:  cp (hl)
     or a
     ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .preLoop
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .end:
 #endif
@@ -487,6 +562,9 @@ _:  cp (hl)
 copyFlashPage:
     push de
     push bc
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     ld d, a
     push af
     ld a, i
@@ -536,12 +614,18 @@ copyFlashPage:
     jp po, _
     ei
 _:  pop af
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     pop bc
     pop de
     ret
     
 #ifdef CPU15
 .ram:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     setBankA ; Destination
     ld a, b
     setBankB ; Source
@@ -582,10 +666,16 @@ _:
     jr nz, .loop
     
     setBankB(0x81)
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .ram_end:
 #else ; Models that don't support placing RAM page 01 in bank 3 (mu0xc slower)
 .ram:
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),1
+#endif
     ld e, b
     
     ld (flashFunctions + flashFunctionSize - 1), a
@@ -623,6 +713,9 @@ _:  cp (hl)
     or a
     ld a, (flashFunctions + flashFunctionSize - 1)
     jr nz, .loop
+#ifdef OVERCLOCKED
+    out (PORT_CPUSPEED),3
+#endif
     ret
 .ram_end:
 #endif
